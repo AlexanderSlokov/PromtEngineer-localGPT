@@ -1,7 +1,6 @@
-import logging
 import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-
+import logging
 import click
 import torch
 from langchain.docstore.document import Document
@@ -27,36 +26,38 @@ def file_log(logentry):
 
 
 def load_single_document(file_path: str) -> Document:
-    # Loads a single document from a file path
     try:
         file_extension = os.path.splitext(file_path)[1]
+        logging.info(f"Attempting to load file with extension: {file_extension}")
         loader_class = DOCUMENT_MAP.get(file_extension)
         if loader_class:
-            file_log(file_path + " loaded.")
+            logging.info(f"{file_path} loader found.")
             loader = loader_class(file_path)
         else:
-            file_log(file_path + " document type is undefined.")
+            logging.error(f"{file_path} document type is undefined.")
             raise ValueError("Document type is undefined")
-        return loader.load()[0]
+        document = loader.load()[0]
+        logging.info(f"{file_path} loaded successfully.")
+        return document
     except Exception as ex:
-        file_log("%s loading error: \n%s" % (file_path, ex))
+        logging.error(f"{file_path} loading error: {ex}")
         return None
 
 
 def load_document_batch(filepaths):
     logging.info("Loading document batch")
     # create a thread pool
-    with ThreadPoolExecutor(len(filepaths)) as exe:
+    with ThreadPoolExecutor(max_workers=min(len(filepaths), INGEST_THREADS)) as executor:
         # load files
-        futures = [exe.submit(load_single_document, name) for name in filepaths]
+        futures = [executor.submit(load_single_document, filepath) for filepath in filepaths]
         # collect data
-        if futures is None:
-            file_log(name + " failed to submit")
+        if not futures:
+            file_log("No files to submit")
             return None
         else:
-            data_list = [future.result() for future in futures]
+            data_list = [future.result() for future in futures if future.result() is not None]
             # return data and file paths
-            return (data_list, filepaths)
+            return data_list, filepaths
 
 
 def load_documents(source_dir: str) -> list[Document]:
@@ -79,7 +80,7 @@ def load_documents(source_dir: str) -> list[Document]:
         # split the load operations into chunks
         for i in range(0, len(paths), chunksize):
             # select a chunk of filenames
-            filepaths = paths[i : (i + chunksize)]
+            filepaths = paths[i: (i + chunksize)]
             # submit the task
             try:
                 future = executor.submit(load_document_batch, filepaths)
@@ -146,33 +147,48 @@ def main(device_type):
     # Load documents and split in chunks
     logging.info(f"Loading documents from {SOURCE_DIRECTORY}")
     documents = load_documents(SOURCE_DIRECTORY)
+    if not documents:
+        logging.error("No documents loaded. Check the source directory and file formats.")
+        return  # Exit if no documents are loaded
+
     text_documents, python_documents = split_documents(documents)
+    if not text_documents and not python_documents:
+        logging.error("Document split failed or resulted in no usable documents.")
+        return  # Exit if splitting documents resulted in empty lists
+
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     python_splitter = RecursiveCharacterTextSplitter.from_language(
         language=Language.PYTHON, chunk_size=880, chunk_overlap=200
     )
+
     texts = text_splitter.split_documents(text_documents)
     texts.extend(python_splitter.split_documents(python_documents))
+
+    if not texts:
+        logging.error("No text chunks were created. Check document content and splitter configuration.")
+        return  # Exit if no text chunks were created
+
     logging.info(f"Loaded {len(documents)} documents from {SOURCE_DIRECTORY}")
     logging.info(f"Split into {len(texts)} chunks of text")
 
-    """
-    (1) Chooses an appropriate langchain library based on the enbedding model name.  Matching code is contained within fun_localGPT.py.
-    
-    (2) Provides additional arguments for instructor and BGE models to improve results, pursuant to the instructions contained on
-    their respective huggingface repository, project page or github repository.
-    """
-
     embeddings = get_embeddings(device_type)
+    if not embeddings:
+        logging.error("Failed to load embeddings. Check the embedding model and device type.")
+        return  # Exit if embeddings couldn't be loaded
 
     logging.info(f"Loaded embeddings from {EMBEDDING_MODEL_NAME}")
 
-    db = Chroma.from_documents(
-        texts,
-        embeddings,
-        persist_directory=PERSIST_DIRECTORY,
-        client_settings=CHROMA_SETTINGS,
-    )
+    try:
+        db = Chroma.from_documents(
+            texts,
+            embeddings,
+            persist_directory=PERSIST_DIRECTORY,
+            client_settings=CHROMA_SETTINGS,
+        )
+        logging.info("Database creation successful.")
+    except Exception as e:
+        logging.error(f"Failed to create Chroma database: {e}")
+        return  # Exit if creating the database fails
 
 
 if __name__ == "__main__":
