@@ -32,5 +32,4 @@ Streamlit-extras
 # Excel File Manipulation
 openpyxl
 
-torch~=2.2.2
 werkzeug~=3.0.2

@@ -157,12 +157,12 @@ Note: When you run this for the first time, it will need internet access to down
 In order to chat with your documents, run the following command (by default, it will run on `cuda`).
 
 ```shell
-python run_localGPT.py
+python run_localGPT_tiengviet.py
 ```
 You can also specify the device type just like `ingest.py`
 
 ```shell
-python run_localGPT.py --device_type mps # to run on Apple silicon
+python run_localGPT_tiengviet.py --device_type mps # to run on Apple silicon
 ```
 
 This will load the ingested vector store and embedding model. You will be presented with a prompt:
@@ -186,19 +186,19 @@ Type `exit` to finish the script.
 You can use the `--show_sources` flag with `run_localGPT.py` to show which chunks were retrieved by the embedding model. By default, it will show 4 different sources/chunks. You can change the number of sources/chunks
 
 ```shell
-python run_localGPT.py --show_sources
+python run_localGPT_tiengviet.py --show_sources
 ```
 
 Another option is to enable chat history. ***Note***: This is disabled by default and can be enabled by using the  `--use_history` flag. The context window is limited so keep in mind enabling history will use it and might overflow.
 
 ```shell
-python run_localGPT.py --use_history
+python run_localGPT_tiengviet.py --use_history
 ```
 
-You can store user questions and model responses with flag `--save_qa` into a csv file `/local_chat_history/qa_log.csv`. Every interaction will be stored. 
+You can store user questions and model responses with flag `--save_qa` into a csv file `/local_chat_history/qa_log.csv`. Every interaction will be stored.
 
 ```shell
-python run_localGPT.py --save_qa
+python run_localGPT_tiengviet.py --save_qa
 ```
 
 # Run the Graphical User Interface
