@@ -4,7 +4,7 @@ import click
 import torch
 import utils
 from langchain.chains import RetrievalQA
-from langchain.embeddings import HuggingFaceInstructEmbeddings
+#from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.llms import HuggingFacePipeline
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler  # for streaming response
 from langchain.callbacks.manager import CallbackManager
@@ -60,7 +60,9 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
     logging.info(f"Loading Model: {model_id}, on: {device_type}")
     logging.info("This action can take a few minutes!")
 
+
     if model_basename is not None:
+
         if ".gguf" in model_basename.lower():
             llm = load_quantized_model_gguf_ggml(model_id, model_basename, device_type, LOGGING)
             return llm
@@ -86,7 +88,7 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
         tokenizer=tokenizer,
         max_length=MAX_NEW_TOKENS,
         temperature=0.2,
-        # top_p=0.95,
+        top_p=0.95,
         repetition_penalty=1.15,
         generation_config=generation_config,
     )
@@ -122,7 +124,7 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
 
     """
     (1) Chooses an appropriate langchain library based on the enbedding model name.  Matching code is contained within ingest.py.
-    
+
     (2) Provides additional arguments for instructor and BGE models to improve results, pursuant to the instructions contained on
     their respective huggingface repository, project page or github repository.
     """
@@ -283,3 +285,4 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s", level=logging.INFO
     )
     main()
+

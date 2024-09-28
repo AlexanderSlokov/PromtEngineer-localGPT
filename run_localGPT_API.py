@@ -10,7 +10,7 @@ from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 
 # from langchain.embeddings import HuggingFaceEmbeddings
-from run_localGPT import load_model
+from run_localGPT_tiengviet import load_model
 from prompt_template_utils import get_prompt_template
 
 # from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -166,7 +166,7 @@ def prompt_route():
     if user_prompt:
         # Acquire the lock before processing the prompt
         with request_lock:
-            # print(f'User Prompt: {user_prompt}')              
+            # print(f'User Prompt: {user_prompt}')
             # Get the answer from the chain
             res = QA(user_prompt)
             answer, docs = res["result"], res["source_documents"]
