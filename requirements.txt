@@ -2,12 +2,12 @@
 langchain==0.0.267
 chromadb==0.4.6
 pdfminer.six==20221105
-InstructorEmbedding
+InstructorEmbedding==1.0.1  # Cụ thể phiên bản để tránh xung đột
 sentence-transformers==2.2.2
 faiss-cpu
 huggingface_hub~=0.20.3
 transformers~=4.38.2
-autoawq; sys_platform != 'darwin'
+autoawq==0.3.0; sys_platform != 'darwin'  # Thêm phiên bản cụ thể để tránh lỗi phụ thuộc
 protobuf==3.20.2; sys_platform != 'darwin'
 protobuf==3.20.2; sys_platform == 'darwin' and platform_machine != 'arm64'
 protobuf==3.20.3; sys_platform == 'darwin' and platform_machine == 'arm64'
@@ -18,19 +18,24 @@ unstructured[pdf]
 
 # Utilities
 urllib3==1.26.6
-accelerate
-bitsandbytes ; sys_platform != 'win32'
-bitsandbytes-windows ; sys_platform == 'win32'
+accelerate==0.20.3  # Thêm phiên bản cụ thể để tương thích với transformers và torch
+bitsandbytes==0.40.2; sys_platform != 'win32'
+bitsandbytes-windows==0.40.2; sys_platform == 'win32'
 click~=8.1.7
 flask~=3.0.3
 requests~=2.31.0
+datasets==2.12.0  # Giữ nguyên phiên bản này do đã tương thích với các gói khác
 
 # Streamlit related
-streamlit~=1.33.0
+streamlit==1.33.0
 Streamlit-extras
 
 # Excel File Manipulation
 openpyxl
 
-torch~=2.2.2
+# Machine Learning Frameworks
+torch==2.4.1+cu118  # Phiên bản torch đã được xác định là tương thích với CUDA 11.8
+torchvision==0.19.1+cu118  # Phiên bản tương thích với torch 2.4.1
+torchaudio==2.4.1+cu118  # Thêm torchaudio để tương thích với torch
+
 werkzeug~=3.0.2
