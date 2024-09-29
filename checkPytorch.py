@@ -1,9 +1,10 @@
 import torch
+import nltk
 print("Torch Version:", torch.__version__)
 print("CUDA Version:", torch.version.cuda)
 print("Is CUDA available?", torch.cuda.is_available())
 print("Number of GPUs available:", torch.cuda.device_count())
-
+print(nltk.data.path)
 try:
     # Kiểm tra xem CUDA có khả dụng không
     if torch.cuda.is_available():
@@ -17,4 +18,3 @@ try:
         print(x)
 except Exception as e:
     print(f"Có lỗi xảy ra: {e}")
-
