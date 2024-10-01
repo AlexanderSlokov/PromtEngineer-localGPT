@@ -33,8 +33,4 @@ streamlit-extras
 openpyxl
 
 # Machine Learning Frameworks
-# Thêm các phiên bản tương thích với CUDA 11.8
-torch==2.3.1+cu118  # Cài đặt PyTorch với hỗ trợ CUDA 11.8
-torchvision==0.18.1+cu118  # Cài đặt Torchvision tương thích với PyTorch
-torchaudio==2.3.1+cu118  # Cài đặt Torchaudio tương thích với CUDA
-pytorch-cuda==11.8  # Cấu hình CUDA 11.8 cho PyTorch
+

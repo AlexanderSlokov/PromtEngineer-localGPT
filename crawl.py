@@ -8,11 +8,13 @@ from constants import (
     SOURCE_DIRECTORY
 )
 
+
 def logToFile(logentry):
-   file1 = open("crawl.log","a")
-   file1.write(logentry + "\n")
-   file1.close()
-   print(logentry + "\n")
+    file1 = open("crawl.log", "a")
+    file1.write(logentry + "\n")
+    file1.close()
+    print(logentry + "\n")
+
 
 @click.command()
 @click.option(
@@ -59,7 +61,6 @@ def logToFile(logentry):
     "--unsupported_directory",
     default="./UNSUPPORTED_DOCUMENTS"
 )
-
 def main(device_type, landing_directory, processed_directory, error_directory, unsupported_directory):
     paths = []
 
@@ -73,19 +74,21 @@ def main(device_type, landing_directory, processed_directory, error_directory, u
             short_filename = os.path.basename(file_name)
 
             if not os.path.isdir(root + "/" + file_name):
-               if file_extension in DOCUMENT_MAP.keys():
-                   shutil.move(root + "/" + file_name, SOURCE_DIRECTORY+ "/" + short_filename)
-                   logToFile("START: " + root + "/" + short_filename)
-                   process = subprocess.Popen("python ingest.py --device_type=" + device_type, shell=True, stdout=subprocess.PIPE)
-                   process.wait()
-                   if process.returncode > 0:
-                       shutil.move(SOURCE_DIRECTORY + "/" + short_filename, error_directory + "/" + short_filename)
-                       logToFile("ERROR: " + root + "/" + short_filename)
-                   else:
-                       logToFile("VALID: " + root + "/" + short_filename)
-                       shutil.move(SOURCE_DIRECTORY + "/" + short_filename, processed_directory+ "/" + short_filename)
-               else:
-                   shutil.move(root + "/" + file_name, unsupported_directory+ "/" + short_filename)
+                if file_extension in DOCUMENT_MAP.keys():
+                    shutil.move(root + "/" + file_name, SOURCE_DIRECTORY + "/" + short_filename)
+                    logToFile("START: " + root + "/" + short_filename)
+                    process = subprocess.Popen("python ingest.py --device_type=" + device_type, shell=True,
+                                               stdout=subprocess.PIPE)
+                    process.wait()
+                    if process.returncode > 0:
+                        shutil.move(SOURCE_DIRECTORY + "/" + short_filename, error_directory + "/" + short_filename)
+                        logToFile("ERROR: " + root + "/" + short_filename)
+                    else:
+                        logToFile("VALID: " + root + "/" + short_filename)
+                        shutil.move(SOURCE_DIRECTORY + "/" + short_filename, processed_directory + "/" + short_filename)
+                else:
+                    shutil.move(root + "/" + file_name, unsupported_directory + "/" + short_filename)
+
 
 if __name__ == "__main__":
     main()

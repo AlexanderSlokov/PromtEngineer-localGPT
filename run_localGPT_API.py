@@ -171,12 +171,8 @@ def prompt_route():
             res = QA(user_prompt)
             answer, docs = res["result"], res["source_documents"]
 
-            prompt_response_dict = {
-                "Prompt": user_prompt,
-                "Answer": answer,
-            }
+            prompt_response_dict = {"Prompt": user_prompt, "Answer": answer, "Sources": []}
 
-            prompt_response_dict["Sources"] = []
             for document in docs:
                 prompt_response_dict["Sources"].append(
                     (os.path.basename(str(document.metadata["source"])), str(document.page_content))

@@ -4,10 +4,9 @@ import os
 from chromadb.config import Settings
 
 # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/excel.html?highlight=xlsx#microsoft-excel
-from langchain.document_loaders import CSVLoader, PDFMinerLoader, TextLoader, UnstructuredExcelLoader, Docx2txtLoader
+from langchain.document_loaders import CSVLoader, TextLoader, UnstructuredExcelLoader, Docx2txtLoader
 from langchain.document_loaders import UnstructuredFileLoader, UnstructuredMarkdownLoader
 from langchain.document_loaders import UnstructuredHTMLLoader
-
 
 # load_dotenv()
 ROOT_DIRECTORY = os.path.dirname(os.path.realpath(__file__))
@@ -32,12 +31,13 @@ CHROMA_SETTINGS = Settings(
 CONTEXT_WINDOW_SIZE = 4096
 MAX_NEW_TOKENS = CONTEXT_WINDOW_SIZE  # int(CONTEXT_WINDOW_SIZE/4)
 
-#### If you get a "not enough space in the buffer" error, you should reduce the values below, start with half of the original values and keep halving the value until the error stops appearing
+# If you get a "not enough space in the buffer" error, you should reduce the values below,
+# start with half of the original values and keep halving the value until the error stops appearing
 
-N_GPU_LAYERS = 35  # Llama-2-70B has 83 layers
-N_BATCH = 512
+N_GPU_LAYERS = 20  # Llama-2-70B has 83 layers
+N_BATCH = 256
 
-### From experimenting with the Llama-2-7B-Chat-GGML model on 8GB VRAM, these values work:
+# From experimenting with the Llama-2-7B-Chat-GGML model on 8GB VRAM, these values work:
 # N_GPU_LAYERS = 20
 # N_BATCH = 512
 
@@ -67,7 +67,8 @@ EMBEDDING_MODEL_NAME = "hkunlp/instructor-large"  # Uses 1.5 GB of VRAM (High Ac
 # EMBEDDING_MODEL_NAME = "hkunlp/instructor-xl" # Uses 5 GB of VRAM (Most Accurate of all models)
 # EMBEDDING_MODEL_NAME = "intfloat/e5-large-v2" # Uses 1.5 GB of VRAM (A little less accurate than instructor-large)
 # EMBEDDING_MODEL_NAME = "intfloat/e5-base-v2" # Uses 0.5 GB of VRAM (A good model for lower VRAM GPUs)
-# EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2" # Uses 0.2 GB of VRAM (Less accurate but fastest - only requires 150mb of vram)
+# (Less accurate but fastest - only requires 150mb of vram)
+# EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2" # Uses 0.2 GB of VRAM
 
 ####
 #### MULTILINGUAL EMBEDDING MODELS
