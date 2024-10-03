@@ -34,8 +34,8 @@ MAX_NEW_TOKENS = CONTEXT_WINDOW_SIZE  # int(CONTEXT_WINDOW_SIZE/4)
 # If you get a "not enough space in the buffer" error, you should reduce the values below,
 # start with half of the original values and keep halving the value until the error stops appearing
 
-N_GPU_LAYERS = 20  # Llama-2-70B has 83 layers
-N_BATCH = 256
+N_GPU_LAYERS = 30  # Điều chỉnh số lượng layer GPU theo khả năng của card đồ họa
+N_BATCH = 128  # Điều chỉnh kích thước batch size phù hợp với dung lượng VRAM
 
 # From experimenting with the Llama-2-7B-Chat-GGML model on 8GB VRAM, these values work:
 # N_GPU_LAYERS = 20
@@ -104,8 +104,8 @@ EMBEDDING_MODEL_NAME = "hkunlp/instructor-large"  # Uses 1.5 GB of VRAM (High Ac
 # MODEL_ID = "TheBloke/Llama-2-7b-Chat-GGUF"
 # MODEL_BASENAME = "llama-2-7b-chat.Q4_K_M.gguf"
 
-MODEL_ID = "TheBloke/Llama-2-7b-Chat-GPTQ"
-MODEL_BASENAME = "model.safetensors"
+# MODEL_ID = "TheBloke/Llama-2-7b-Chat-GPTQ"
+# MODEL_BASENAME = "model.safetensors"
 
 # MODEL_ID = "TheBloke/Mistral-7B-Instruct-v0.1-GGUF"
 # MODEL_BASENAME = "mistral-7b-instruct-v0.1.Q8_0.gguf"
@@ -155,6 +155,7 @@ MODEL_BASENAME = "model.safetensors"
 # MODEL_ID = "TheBloke/WizardLM-13B-V1.2-GPTQ"
 # MODEL_BASENAME = "gptq_model-4bit-128g.safetensors
 
+
 ### 30b GPTQ Models for 24GB GPUs (*** Requires using intfloat/e5-base-v2 instead of hkunlp/instructor-large as embedding model ***)
 # MODEL_ID = "TheBloke/Wizard-Vicuna-30B-Uncensored-GPTQ"
 # MODEL_BASENAME = "Wizard-Vicuna-30B-Uncensored-GPTQ-4bit--1g.act.order.safetensors"
@@ -171,6 +172,9 @@ MODEL_BASENAME = "model.safetensors"
 # MODEL_BASENAME = "WizardLM-7B-uncensored-GPTQ-4bit-128g.compat.no-act-order.safetensors"
 # MODEL_ID = "TheBloke/wizardLM-7B-GPTQ"
 # MODEL_BASENAME = "wizardLM-7B-GPTQ-4bit.compat.no-act-order.safetensors"
+# Trong file constants.py, bạn tìm phần định nghĩa MODEL_ID và MODEL_BASENAME như sau:
+MODEL_ID = "TheBloke/Llama-2-7B-vietnamese-20k-GPTQ"
+MODEL_BASENAME = "model.safetensors"
 
 ####
 #### (FOR GGML) (Quantized cpu+gpu+mps) models - check if they support llama.cpp

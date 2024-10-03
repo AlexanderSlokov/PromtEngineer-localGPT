@@ -3,6 +3,7 @@ import os
 import subprocess
 from torch.utils.cpp_extension import CUDA_HOME
 
+
 def get_vram_info():
     """
     Trích xuất thông tin VRAM hiện có và điều chỉnh giá trị
@@ -11,8 +12,7 @@ def get_vram_info():
     try:
         if torch.cuda.is_available():
             device = torch.cuda.current_device()
-            total_vram = torch.cuda.get_device_properties(device).total_memory / (
-                    1024 ** 3)  # Chuyển đổi từ byte sang GB
+            total_vram = torch.cuda.get_device_properties(device).total_memory / (1024 ** 3)  # Chuyển đổi từ byte sang GB
             print(f"Total VRAM (GB): {total_vram:.2f}")
 
             # Điều chỉnh N_GPU_LAYERS và N_BATCH dựa vào dung lượng VRAM

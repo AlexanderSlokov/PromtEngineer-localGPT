@@ -2,7 +2,8 @@ import os
 import logging
 import click
 import torch
-# import utils
+import nltk
+#import utils
 from langchain.chains import RetrievalQA
 # from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.llms import HuggingFacePipeline
@@ -42,6 +43,14 @@ from constants import (
 
 # Đảm bảo thư viện tạo pipeline đã được import trước khi chạy file
 from transformers import pipeline
+
+# thư viện cho các chỉ số đánh giá
+
+from nltk.translate.bleu_score import sentence_bleu
+from sklearn.metrics import precision_recall_fscore_support
+from typing import List
+
+nltk.download('punkt')  # Tải thư viện phụ thuộc cho nltk
 
 # Khởi tạo pipeline dịch với chỉ định `device` cho CUDA
 translate_vi_to_en = pipeline("translation", model="Helsinki-NLP/opus-mt-vi-en", device=0)  # `device=0` chỉ định GPU
@@ -180,6 +189,98 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
     return qa
 
 
+def calculate_metrics(predicted_answer: str, reference_answer: str, k_retrieved: List[str]) -> dict:
+    """
+    Tính toán các chỉ số đánh giá như BLEU, Recall@k, MRR và F1 Score.
+
+    Args:
+        predicted_answer (str): Câu trả lời được sinh ra bởi mô hình.
+        reference_answer (str): Câu trả lời đúng hoặc câu trả lời chuẩn.
+        k_retrieved (List[str]): Danh sách các tài liệu trả về (top k tài liệu).
+
+    Returns:
+        dict: Các chỉ số đánh giá được tính toán.
+    """
+    # Tính BLEU Score
+    reference = [nltk.word_tokenize(reference_answer.lower())]  # Đưa về dạng từ viết thường
+    candidate = nltk.word_tokenize(predicted_answer.lower())
+    bleu_score = sentence_bleu(reference, candidate)
+
+    # Tính Recall@k: Tỷ lệ tài liệu khớp với câu trả lời chuẩn trong top k tài liệu
+    relevant_retrieved = sum([1 for doc in k_retrieved if reference_answer in doc])
+    recall_at_k = relevant_retrieved / len(k_retrieved) if len(k_retrieved) > 0 else 0.0
+
+    # Tính Mean Reciprocal Rank (MRR)
+    mrr = 0.0
+    for rank, doc in enumerate(k_retrieved, 1):
+        if reference_answer in doc:
+            mrr = 1 / rank
+            break
+
+    # Tính Precision, Recall và F1 Score
+    precision, recall, f1, _ = precision_recall_fscore_support([reference_answer], [predicted_answer], average='macro')
+
+    # Trả về các chỉ số
+    return {
+        'BLEU': bleu_score,
+        'Recall@k': recall_at_k,
+        'MRR': mrr,
+        'F1 Score': f1
+    }
+
+
+def test_sample_query(qa):
+    """
+    Hàm để kiểm tra hệ thống QA với câu hỏi mẫu và câu trả lời tham chiếu.
+
+    Args:
+        qa (RetrievalQA): Hệ thống QA đã được khởi tạo.
+    """
+    # Câu hỏi mẫu và câu trả lời tham chiếu
+    query_vi = ("Điều 123 của Bộ luật Hình sự Việt Nam năm 2015 quy định như thế nào về tội giết người và các tình "
+                "tiết tăng nặng liên quan đến tội này?")
+    reference_answer = """
+    Điều 123 - Tội giết người theo Bộ luật Hình sự Việt Nam năm 2015 (sửa đổi, bổ sung năm 2017)
+
+    1. Tội giết người là hành vi cố ý tước đoạt mạng sống của người khác một cách trái pháp luật, không thuộc các trường hợp được loại trừ trách nhiệm hình sự (như phòng vệ chính đáng).
+
+    2. Hình phạt:
+       - Người nào phạm tội giết người sẽ bị phạt tù từ 12 năm đến 20 năm, tù chung thân, hoặc tử hình.
+
+    3. Các tình tiết tăng nặng bao gồm:
+       - Giết hai người trở lên.
+       - Giết người dưới 16 tuổi.
+       - Giết phụ nữ mà biết là có thai.
+       - Giết người đang thi hành công vụ hoặc vì lý do công vụ của nạn nhân.
+       - Giết ông, bà, cha, mẹ, người nuôi dưỡng, thầy giáo, cô giáo của mình.
+       - Giết người một cách man rợ, bằng cách có tính chất côn đồ, hoặc bằng thủ đoạn có khả năng làm chết nhiều người.
+       - Lợi dụng nghề nghiệp để phạm tội hoặc có động cơ đê hèn.
+
+    4. Các trường hợp loại trừ trách nhiệm hình sự:
+       - Trường hợp phòng vệ chính đáng, vượt quá giới hạn phòng vệ chính đáng, hoặc do sự kiện bất ngờ hoặc tình trạng không thể làm chủ hành vi.
+    """
+
+    # Dịch câu hỏi từ tiếng Việt sang tiếng Anh
+    query_en = translate(query_vi, "vi", "en")
+    res = qa(query_en)
+    answer_en = res["result"]
+    answer_vi = translate(answer_en, "en", "vi")
+
+    # In ra kết quả
+    print("\n> Câu hỏi (Tiếng Việt):")
+    print(query_vi)
+    print("\n> Câu trả lời (Tiếng Việt):")
+    print(answer_vi)
+
+    # Gọi hàm đánh giá với câu trả lời đã sinh ra từ mô hình
+    benchmark_metrics = calculate_metrics(predicted_answer=answer_en, reference_answer=reference_answer,
+                                          k_retrieved=[doc.page_content for doc in res["source_documents"]])
+
+    print(
+        f"\n> Các chỉ số đánh giá:\nBLEU: {benchmark_metrics['BLEU']}\nRecall@k: {benchmark_metrics['Recall@k']}\nMRR: "
+        f"{benchmark_metrics['MRR']}\nF1 Score: {benchmark_metrics['F1 Score']}")
+
+
 # Định nghĩa các tùy chọn dòng lệnh cho việc chạy mô hình
 @click.command()
 @click.option(
@@ -216,6 +317,7 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
     help="Lưu cặp câu hỏi và câu trả lời vào file CSV (Mặc định là False)",
 )
 def main(device_type, show_sources, use_history, model_type, save_qa):
+    global metrics
     print(f"Đang chạy trên thiết bị: {device_type}")
 
     if not os.path.exists(MODELS_PATH):
@@ -224,33 +326,48 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
     # Khởi tạo pipeline truy vấn và trả lời
     qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type=model_type)
 
-    while True:
-        query_vi = input("\nNhập câu hỏi (Tiếng Việt): ")
-        if query_vi.lower() == "exit":
-            break
-
-        # Dịch câu hỏi từ Tiếng Việt sang Tiếng Anh
-        query_en = translate(query_vi, "vi", "en")
-        res = qa(query_en)
-        answer_en = res["result"]
-        answer_vi = translate(answer_en, "en", "vi")
-
-        # In ra kết quả
-        print("\n> Câu hỏi (Tiếng Việt):")
-        print(query_vi)
-        print("\n> Câu trả lời (Tiếng Việt):")
-        print(answer_vi)
-
-        if show_sources:
-            print("----------------------------------TÀI LIỆU GỐC---------------------------")
-            for document in res["source_documents"]:
-                print("\n> " + document.metadata["source"] + ":")
-                print(document.page_content)
-            print("----------------------------------TÀI LIỆU GỐC---------------------------")
-
-        if save_qa:
-            # Thêm hàm ghi câu hỏi và câu trả lời ra file CSV tại đây (nếu cần)
-            pass
+    # Gọi hàm kiểm tra với câu hỏi và câu trả lời mẫu
+    test_sample_query(qa)
+    #
+    # while True:
+    #     query_vi = input("\nNhập câu hỏi (Tiếng Việt): ")
+    #     if query_vi.lower() == "exit":
+    #         break
+    #
+    #     # Dịch câu hỏi từ Tiếng Việt sang Tiếng Anh
+    #     query_en = translate(query_vi, "vi", "en")
+    #     res = qa(query_en)
+    #     answer_en = res["result"]
+    #     answer_vi = translate(answer_en, "en", "vi")
+    #
+    #     # In ra kết quả
+    #     print("\n> Câu hỏi (Tiếng Việt):")
+    #     print(query_vi)
+    #     print("\n> Câu trả lời (Tiếng Việt):")
+    #     print(answer_vi)
+    #
+    #     # Gọi hàm đánh giá với câu trả lời đã dịch từ tiếng Việt sang tiếng Anh
+    #     if answer_en and query_en:  # Kiểm tra nếu cả câu trả lời và câu hỏi đều có nội dung
+    #         metrics = calculate_metrics(
+    #             predicted_answer=answer_en,
+    #             reference_answer=query_en,
+    #             k_retrieved=[doc.page_content for doc in res["source_documents"]]
+    #         )
+    #
+    #     print(
+    #         f"\n> Các chỉ số đánh giá:\nBLEU: {metrics['BLEU']}\nRecall@k: {metrics['Recall@k']}\nMRR: {metrics['MRR']}\nF1 Score: {metrics['F1 Score']}")
+    #
+    #     if show_sources:
+    #         print("----------------------------------TÀI LIỆU GỐC---------------------------")
+    #         for document in res["source_documents"]:
+    #             print("\n> " + document.metadata["source"] + ":")
+    #             print(document.page_content)
+    #         print("----------------------------------TÀI LIỆU GỐC---------------------------")
+    #
+    #     if save_qa:
+    #         # Thêm hàm ghi câu hỏi, câu trả lời và các chỉ số ra file CSV tại đây (nếu cần)
+    #         utils.log_to_csv(query_vi, answer_vi)
+    #
 
 
 if __name__ == "__main__":
