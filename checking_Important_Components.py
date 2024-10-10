@@ -54,12 +54,15 @@ print("Number of GPUs available:", torch.cuda.device_count())
 cuda_home = torch.utils.cpp_extension.CUDA_HOME
 print(f"CUDA Home (Torch is using): {cuda_home}")
 
-# Kiểm tra xem có sử dụng CUDA của Conda hay không
+# Kiểm tra CUDA có trong môi trường conda không
 conda_cuda_path = os.environ.get("CONDA_PREFIX")
-if conda_cuda_path and os.path.exists(os.path.join(conda_cuda_path, "lib", "libcudart.so")):
+print(f"CONDA_PREFIX: {conda_cuda_path}")
+
+# Kiểm tra CUDA từ conda environment
+if conda_cuda_path and os.path.exists(os.path.join(conda_cuda_path, "Library", "bin", "cudart64_110.dll")):
     print(f"CUDA đang được sử dụng từ Conda Environment: {conda_cuda_path}")
 else:
-    print("CUDA không được cài đặt trong môi trường Conda hoặc không tìm thấy libcudart.so")
+    print("CUDA không được cài đặt trong môi trường Conda hoặc không tìm thấy cudart64_110.dll")
 
 # Kiểm tra phiên bản CUDA Toolkit trong môi trường conda
 try:

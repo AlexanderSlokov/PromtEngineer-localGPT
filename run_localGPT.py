@@ -226,27 +226,13 @@ def test_sample_query_offical(qa):
         qa (RetrievalQA): Hệ thống QA đã được khởi tạo.
     """
     # Câu hỏi mẫu và câu trả lời tham chiếu bằng tiếng Việt
-    query_vi = ("Điều 123 của Bộ luật Hình sự Việt Nam năm 2015 quy định như thế nào về tội giết người và các tình "
-                "tiết tăng nặng liên quan đến tội này?")
+    query_vi = ("Điều 123 của Bộ luật Hình sự Việt Nam năm 2015 quy định như thế nào về tội giết người và các tình tiết "
+                "tăng nặng liên quan đến tội này?")
     reference_answer = """
-    Điều 123 - Tội giết người theo Bộ luật Hình sự Việt Nam năm 2015 (sửa đổi, bổ sung năm 2017)
+   Based on the provided context, I can provide information on the relevant laws and regulations in Vietnam related to murder and related offenses. According to Article 123 of the 2015 Criminal Code of Vietnam, whoever commits murder shall be punished with imprisonment from 15 years to life imprisonment or death penalty.
+Additionally, according to Article 124 of the same code, whoever abets or assists in the commission of murder shall be punished with imprisonment from 10 years to 15 years or fine from VND 50 million to VND 100 million (approximately USD 2,200 to USD 4,400).
+It is important to note that these provisions are subject to change and may have additional requirements or exceptions as specified in the law. Therefore, it is recommended to consult with legal professionals or seek advice from competent authorities for further clarification.
 
-    1. Tội giết người là hành vi cố ý tước đoạt mạng sống của người khác một cách trái pháp luật, không thuộc các trường hợp được loại trừ trách nhiệm hình sự (như phòng vệ chính đáng).
-
-    2. Hình phạt:
-       - Người nào phạm tội giết người sẽ bị phạt tù từ 12 năm đến 20 năm, tù chung thân, hoặc tử hình.
-
-    3. Các tình tiết tăng nặng bao gồm:
-       - Giết hai người trở lên.
-       - Giết người dưới 16 tuổi.
-       - Giết phụ nữ mà biết là có thai.
-       - Giết người đang thi hành công vụ hoặc vì lý do công vụ của nạn nhân.
-       - Giết ông, bà, cha, mẹ, người nuôi dưỡng, thầy giáo, cô giáo của mình.
-       - Giết người một cách man rợ, bằng cách có tính chất côn đồ, hoặc bằng thủ đoạn có khả năng làm chết nhiều người.
-       - Lợi dụng nghề nghiệp để phạm tội hoặc có động cơ đê hèn.
-
-    4. Các trường hợp loại trừ trách nhiệm hình sự:
-       - Trường hợp phòng vệ chính đáng, vượt quá giới hạn phòng vệ chính đáng, hoặc do sự kiện bất ngờ hoặc tình trạng không thể làm chủ hành vi.
     """
 
     # Gọi hệ thống QA trực tiếp với câu hỏi tiếng Việt
@@ -355,7 +341,7 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
     qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type=model_type)
     # Interactive questions and answers
 
-    test_sample_query_offical(qa)
+    # test_sample_query_offical(qa)
 
     while True:
         query = input("\nEnter a query: ")

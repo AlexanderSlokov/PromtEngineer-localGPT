@@ -34,8 +34,8 @@ MAX_NEW_TOKENS = CONTEXT_WINDOW_SIZE  # int(CONTEXT_WINDOW_SIZE/4)
 # If you get a "not enough space in the buffer" error, you should reduce the values below,
 # start with half of the original values and keep halving the value until the error stops appearing
 
-N_GPU_LAYERS = 30  # Điều chỉnh số lượng layer GPU theo khả năng của card đồ họa
-N_BATCH = 128  # Điều chỉnh kích thước batch size phù hợp với dung lượng VRAM
+N_GPU_LAYERS = 20  # Điều chỉnh số lượng layer GPU theo khả năng của card đồ họa
+N_BATCH = 256  # Điều chỉnh kích thước batch size phù hợp với dung lượng VRAM
 
 # From experimenting with the Llama-2-7B-Chat-GGML model on 8GB VRAM, these values work:
 # N_GPU_LAYERS = 20
@@ -107,6 +107,13 @@ EMBEDDING_MODEL_NAME = "hkunlp/instructor-large"  # Uses 1.5 GB of VRAM (High Ac
 # MODEL_ID = "TheBloke/Llama-2-7b-Chat-GPTQ"
 # MODEL_BASENAME = "model.safetensors"
 
+# Đặt MODEL_ID và MODEL_BASENAME cho phiên bản GPTQ 4-bit hoặc 8-bit đã chọn
+MODEL_ID = "TheBloke/law-chat-GPTQ"
+MODEL_BASENAME = "model.safetensors"
+
+# MODEL_ID = "TheBloke/Llama-2-7B-vietnamese-20k-GPTQ"
+# MODEL_BASENAME = "model.safetensors"
+
 # MODEL_ID = "TheBloke/Mistral-7B-Instruct-v0.1-GGUF"
 # MODEL_BASENAME = "mistral-7b-instruct-v0.1.Q8_0.gguf"
 
@@ -173,8 +180,7 @@ EMBEDDING_MODEL_NAME = "hkunlp/instructor-large"  # Uses 1.5 GB of VRAM (High Ac
 # MODEL_ID = "TheBloke/wizardLM-7B-GPTQ"
 # MODEL_BASENAME = "wizardLM-7B-GPTQ-4bit.compat.no-act-order.safetensors"
 # Trong file constants.py, bạn tìm phần định nghĩa MODEL_ID và MODEL_BASENAME như sau:
-MODEL_ID = "TheBloke/Llama-2-7B-vietnamese-20k-GPTQ"
-MODEL_BASENAME = "model.safetensors"
+
 
 ####
 #### (FOR GGML) (Quantized cpu+gpu+mps) models - check if they support llama.cpp

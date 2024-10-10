@@ -3,7 +3,7 @@ import logging
 import click
 import torch
 import nltk
-#import utils
+import utils
 from langchain.chains import RetrievalQA
 # from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.llms import HuggingFacePipeline
@@ -65,11 +65,20 @@ def translate(query, from_lang, to_lang):
         if len(query) > 1000:
             query = query[:1000]  # Cắt chuỗi đầu vào nếu quá dài
         translation = translate_vi_to_en(query, max_length=1000)[0]['translation_text']
+        # Hiển thị kết quả dịch từ tiếng Việt sang tiếng Anh
+        print("\nKết quả dịch từ Tiếng Việt sang Tiếng Anh:")
+        print(translation)
+
     elif from_lang == "en" and to_lang == "vi":
         if len(query) > 1000:
             query = query[:1000]
         translation = translate_en_to_vi(query, max_length=1000)[0]['translation_text']
     print("Độ dài truy vấn đã xử lý:", len(query))
+    # Hiển thị kết quả dịch từ tiếng Anh sang tiếng Việt
+    print("\nKết quả dịch từ Tiếng Anh sang Tiếng Việt:")
+    print(translation)
+
+    print(f"Độ dài truy vấn đã xử lý: {len(query)}")  # Kiểm tra lại độ dài câu truy vấn sau xử lý
     return translation
 
 
@@ -327,47 +336,46 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
     qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type=model_type)
 
     # Gọi hàm kiểm tra với câu hỏi và câu trả lời mẫu
-    test_sample_query(qa)
-    #
-    # while True:
-    #     query_vi = input("\nNhập câu hỏi (Tiếng Việt): ")
-    #     if query_vi.lower() == "exit":
-    #         break
-    #
-    #     # Dịch câu hỏi từ Tiếng Việt sang Tiếng Anh
-    #     query_en = translate(query_vi, "vi", "en")
-    #     res = qa(query_en)
-    #     answer_en = res["result"]
-    #     answer_vi = translate(answer_en, "en", "vi")
-    #
-    #     # In ra kết quả
-    #     print("\n> Câu hỏi (Tiếng Việt):")
-    #     print(query_vi)
-    #     print("\n> Câu trả lời (Tiếng Việt):")
-    #     print(answer_vi)
-    #
-    #     # Gọi hàm đánh giá với câu trả lời đã dịch từ tiếng Việt sang tiếng Anh
-    #     if answer_en and query_en:  # Kiểm tra nếu cả câu trả lời và câu hỏi đều có nội dung
-    #         metrics = calculate_metrics(
-    #             predicted_answer=answer_en,
-    #             reference_answer=query_en,
-    #             k_retrieved=[doc.page_content for doc in res["source_documents"]]
-    #         )
-    #
-    #     print(
-    #         f"\n> Các chỉ số đánh giá:\nBLEU: {metrics['BLEU']}\nRecall@k: {metrics['Recall@k']}\nMRR: {metrics['MRR']}\nF1 Score: {metrics['F1 Score']}")
-    #
-    #     if show_sources:
-    #         print("----------------------------------TÀI LIỆU GỐC---------------------------")
-    #         for document in res["source_documents"]:
-    #             print("\n> " + document.metadata["source"] + ":")
-    #             print(document.page_content)
-    #         print("----------------------------------TÀI LIỆU GỐC---------------------------")
-    #
-    #     if save_qa:
-    #         # Thêm hàm ghi câu hỏi, câu trả lời và các chỉ số ra file CSV tại đây (nếu cần)
-    #         utils.log_to_csv(query_vi, answer_vi)
-    #
+    # test_sample_query(qa)
+
+    while True:
+        query_vi = input("\nNhập câu hỏi (Tiếng Việt): ")
+        if query_vi.lower() == "exit":
+            break
+
+        # Dịch câu hỏi từ Tiếng Việt sang Tiếng Anh
+        query_en = translate(query_vi, "vi", "en")
+        res = qa(query_en)
+        answer_en = res["result"]
+        answer_vi = translate(answer_en, "en", "vi")
+
+        # In ra kết quả
+        print("\n> Câu hỏi (Tiếng Việt):")
+        print(query_vi)
+        print("\n> Câu trả lời (Tiếng Việt):")
+        print(answer_vi)
+
+        # Gọi hàm đánh giá với câu trả lời đã dịch từ tiếng Việt sang tiếng Anh
+        if answer_en and query_en:  # Kiểm tra nếu cả câu trả lời và câu hỏi đều có nội dung
+            metrics = calculate_metrics(
+                predicted_answer=answer_en,
+                reference_answer=query_en,
+                k_retrieved=[doc.page_content for doc in res["source_documents"]]
+            )
+
+        print(
+            f"\n> Các chỉ số đánh giá:\nBLEU: {metrics['BLEU']}\nRecall@k: {metrics['Recall@k']}\nMRR: {metrics['MRR']}\nF1 Score: {metrics['F1 Score']}")
+
+        if show_sources:
+            print("----------------------------------TÀI LIỆU GỐC---------------------------")
+            for document in res["source_documents"]:
+                print("\n> " + document.metadata["source"] + ":")
+                print(document.page_content)
+            print("----------------------------------TÀI LIỆU GỐC---------------------------")
+
+        if save_qa:
+            # Thêm hàm ghi câu hỏi, câu trả lời và các chỉ số ra file CSV tại đây (nếu cần)
+            utils.log_to_csv(query_vi, answer_vi)
 
 
 if __name__ == "__main__":
