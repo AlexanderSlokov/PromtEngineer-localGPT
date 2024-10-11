@@ -94,12 +94,12 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
         "text-generation",
         model=model,
         tokenizer=tokenizer,
-        max_length=MAX_NEW_TOKENS,
-        truncation=True,  # Thêm truncation=True để tắt cảnh báo
-        do_sample=True,  # Thêm do_sample=True để bật sampling
-        temperature=0.2,
+        max_new_tokens=MAX_NEW_TOKENS,
+        do_sample=True,
+        temperature=0.7,
         top_p=0.95,
-        repetition_penalty=1.15,
+        top_k=40,
+        repetition_penalty=1.1,
         generation_config=generation_config,
     )
 

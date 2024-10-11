@@ -28,14 +28,14 @@ CHROMA_SETTINGS = Settings(
 )
 
 # Context Window and Max New Tokens
-CONTEXT_WINDOW_SIZE = 1024
-MAX_NEW_TOKENS = CONTEXT_WINDOW_SIZE  # int(CONTEXT_WINDOW_SIZE/4)
+CONTEXT_WINDOW_SIZE = 4096
+MAX_NEW_TOKENS = 512
 
 # If you get a "not enough space in the buffer" error, you should reduce the values below,
 # start with half of the original values and keep halving the value until the error stops appearing
 
-N_GPU_LAYERS = 35  # Điều chỉnh số lượng layer GPU theo khả năng của card đồ họa
-N_BATCH = 32  # Điều chỉnh kích thước batch size phù hợp với dung lượng VRAM
+N_GPU_LAYERS = 20  # Điều chỉnh số lượng layer GPU theo khả năng của card đồ họa
+N_BATCH = 512  # Điều chỉnh kích thước batch size phù hợp với dung lượng VRAM
 
 # From experimenting with the Llama-2-7B-Chat-GGML model on 8GB VRAM, these values work:
 # N_GPU_LAYERS = 20
