@@ -28,14 +28,14 @@ CHROMA_SETTINGS = Settings(
 )
 
 # Context Window and Max New Tokens
-CONTEXT_WINDOW_SIZE = 4096
+CONTEXT_WINDOW_SIZE = 1024
 MAX_NEW_TOKENS = CONTEXT_WINDOW_SIZE  # int(CONTEXT_WINDOW_SIZE/4)
 
 # If you get a "not enough space in the buffer" error, you should reduce the values below,
 # start with half of the original values and keep halving the value until the error stops appearing
 
-N_GPU_LAYERS = 20  # Điều chỉnh số lượng layer GPU theo khả năng của card đồ họa
-N_BATCH = 256  # Điều chỉnh kích thước batch size phù hợp với dung lượng VRAM
+N_GPU_LAYERS = 35  # Điều chỉnh số lượng layer GPU theo khả năng của card đồ họa
+N_BATCH = 32  # Điều chỉnh kích thước batch size phù hợp với dung lượng VRAM
 
 # From experimenting with the Llama-2-7B-Chat-GGML model on 8GB VRAM, these values work:
 # N_GPU_LAYERS = 20
@@ -104,12 +104,12 @@ EMBEDDING_MODEL_NAME = "hkunlp/instructor-large"  # Uses 1.5 GB of VRAM (High Ac
 # MODEL_ID = "TheBloke/Llama-2-7b-Chat-GGUF"
 # MODEL_BASENAME = "llama-2-7b-chat.Q4_K_M.gguf"
 
-# MODEL_ID = "TheBloke/Llama-2-7b-Chat-GPTQ"
-# MODEL_BASENAME = "model.safetensors"
+MODEL_ID = "TheBloke/Llama-2-7b-Chat-GPTQ"
+MODEL_BASENAME = "model.safetensors"
 
 # Đặt MODEL_ID và MODEL_BASENAME cho phiên bản GPTQ 4-bit hoặc 8-bit đã chọn
-MODEL_ID = "TheBloke/law-chat-GPTQ"
-MODEL_BASENAME = "model.safetensors"
+# MODEL_ID = "TheBloke/law-chat-GPTQ"
+# MODEL_BASENAME = "model.safetensors"
 
 # MODEL_ID = "TheBloke/Llama-2-7B-vietnamese-20k-GPTQ"
 # MODEL_BASENAME = "model.safetensors"

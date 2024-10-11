@@ -95,3 +95,21 @@ try:
         print(x)
 except Exception as e:
     print(f"Có lỗi xảy ra: {e}")
+
+# Lấy danh sách các dependencies từ pip và lưu vào file
+try:
+    pip_requirements = subprocess.check_output("pip freeze", shell=True).decode()
+    with open("pip_requirements.txt", "w") as f:
+        f.write(pip_requirements)
+    print("Danh sách các dependencies từ pip đã được ghi vào pip_requirements.txt")
+except Exception as e:
+    print(f"Không thể lấy danh sách dependencies từ pip: {e}")
+
+# Lấy danh sách các dependencies từ conda và lưu vào file
+try:
+    conda_requirements = subprocess.check_output("conda list", shell=True).decode()
+    with open("conda_requirements.txt", "w") as f:
+        f.write(conda_requirements)
+    print("Danh sách các dependencies từ conda đã được ghi vào conda_requirements.txt")
+except Exception as e:
+    print(f"Không thể lấy danh sách dependencies từ conda: {e}")
