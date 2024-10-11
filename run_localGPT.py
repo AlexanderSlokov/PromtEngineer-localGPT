@@ -3,8 +3,16 @@ import logging
 import click
 import torch
 import utils
+import nltk
+
+# thư viện cho các chỉ số đánh giá
+
+from nltk.translate.bleu_score import sentence_bleu
+from sklearn.metrics import precision_recall_fscore_support
+from typing import List
+
 from langchain.chains import RetrievalQA
-#from langchain.embeddings import HuggingFaceInstructEmbeddings
+# from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.llms import HuggingFacePipeline
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler  # for streaming response
 from langchain.callbacks.manager import CallbackManager
@@ -46,6 +54,7 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
     subsequent runs will use the model from the disk.
 
     Args:
+        LOGGING:
         device_type (str): Type of device to use, e.g., "cuda" for GPU or "cpu" for CPU.
         model_id (str): Identifier of the model to load from HuggingFace's model hub.
         model_basename (str, optional): Basename of the model if using quantized models.
@@ -59,7 +68,6 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
     """
     logging.info(f"Loading Model: {model_id}, on: {device_type}")
     logging.info("This action can take a few minutes!")
-
 
     if model_basename is not None:
 
@@ -87,6 +95,8 @@ def load_model(device_type, model_id, model_basename=None, LOGGING=logging):
         model=model,
         tokenizer=tokenizer,
         max_length=MAX_NEW_TOKENS,
+        truncation=True,  # Thêm truncation=True để tắt cảnh báo
+        do_sample=True,  # Thêm do_sample=True để bật sampling
         temperature=0.2,
         top_p=0.95,
         repetition_penalty=1.15,
@@ -125,7 +135,8 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
     """
     (1) Chooses an appropriate langchain library based on the enbedding model name.  Matching code is contained within ingest.py.
 
-    (2) Provides additional arguments for instructor and BGE models to improve results, pursuant to the instructions contained on
+    (2) Provides additional arguments for instructor and BGE models to improve results,
+    pursuant to the instructions contained on
     their respective huggingface repository, project page or github repository.
     """
 
@@ -165,6 +176,82 @@ def retrieval_qa_pipline(device_type, use_history, promptTemplate_type="llama"):
         )
 
     return qa
+
+
+def calculate_metrics(predicted_answer: str, reference_answer: str, k_retrieved: List[str]) -> dict:
+    """
+    Tính toán các chỉ số đánh giá như BLEU, Recall@k, MRR và F1 Score.
+
+    Args:
+        predicted_answer (str): Câu trả lời được sinh ra bởi mô hình.
+        reference_answer (str): Câu trả lời đúng hoặc câu trả lời chuẩn.
+        k_retrieved (List[str]): Danh sách các tài liệu trả về (top k tài liệu).
+
+    Returns:
+        dict: Các chỉ số đánh giá được tính toán.
+    """
+    # Tính BLEU Score
+    reference = [nltk.word_tokenize(reference_answer.lower())]  # Đưa về dạng từ viết thường
+    candidate = nltk.word_tokenize(predicted_answer.lower())
+    bleu_score = sentence_bleu(reference, candidate)
+
+    # Tính Recall@k: Tỷ lệ tài liệu khớp với câu trả lời chuẩn trong top k tài liệu
+    relevant_retrieved = sum([1 for doc in k_retrieved if reference_answer in doc])
+    recall_at_k = relevant_retrieved / len(k_retrieved) if len(k_retrieved) > 0 else 0.0
+
+    # Tính Mean Reciprocal Rank (MRR)
+    mrr = 0.0
+    for rank, doc in enumerate(k_retrieved, 1):
+        if reference_answer in doc:
+            mrr = 1 / rank
+            break
+
+    # Tính Precision, Recall và F1 Score
+    precision, recall, f1, _ = precision_recall_fscore_support([reference_answer], [predicted_answer], average='macro')
+
+    # Trả về các chỉ số
+    return {
+        'BLEU': bleu_score,
+        'Recall@k': recall_at_k,
+        'MRR': mrr,
+        'F1 Score': f1
+    }
+
+
+def test_sample_query_offical(qa):
+    """
+    Hàm để kiểm tra hệ thống QA với câu hỏi mẫu và câu trả lời tham chiếu.
+
+    Args:
+        qa (RetrievalQA): Hệ thống QA đã được khởi tạo.
+    """
+    # Câu hỏi mẫu và câu trả lời tham chiếu bằng tiếng Việt
+    query_vi = ("Điều 123 của Bộ luật Hình sự Việt Nam năm 2015 quy định như thế nào về tội giết người và các tình tiết "
+                "tăng nặng liên quan đến tội này?")
+    reference_answer = """
+   Based on the provided context, I can provide information on the relevant laws and regulations in Vietnam related to murder and related offenses. According to Article 123 of the 2015 Criminal Code of Vietnam, whoever commits murder shall be punished with imprisonment from 15 years to life imprisonment or death penalty.
+Additionally, according to Article 124 of the same code, whoever abets or assists in the commission of murder shall be punished with imprisonment from 10 years to 15 years or fine from VND 50 million to VND 100 million (approximately USD 2,200 to USD 4,400).
+It is important to note that these provisions are subject to change and may have additional requirements or exceptions as specified in the law. Therefore, it is recommended to consult with legal professionals or seek advice from competent authorities for further clarification.
+
+    """
+
+    # Gọi hệ thống QA trực tiếp với câu hỏi tiếng Việt
+    res = qa(query_vi)
+    answer_vi = res["result"]
+
+    # In ra kết quả
+    print("\n> Câu hỏi (Tiếng Việt):")
+    print(query_vi)
+    print("\n> Câu trả lời (Tiếng Việt):")
+    print(answer_vi)
+
+    # Gọi hàm đánh giá với câu trả lời đã sinh ra từ mô hình
+    benchmark_metrics = calculate_metrics(predicted_answer=answer_vi, reference_answer=reference_answer,
+                                          k_retrieved=[doc.page_content for doc in res["source_documents"]])
+
+    print(
+        f"\n> Các chỉ số đánh giá:\nBLEU: {benchmark_metrics['BLEU']}\nRecall@k: {benchmark_metrics['Recall@k']}\nMRR: "
+        f"{benchmark_metrics['MRR']}\nF1 Score: {benchmark_metrics['F1 Score']}")
 
 
 # chose device typ to run on as well as to show source documents.
@@ -253,6 +340,9 @@ def main(device_type, show_sources, use_history, model_type, save_qa):
 
     qa = retrieval_qa_pipline(device_type, use_history, promptTemplate_type=model_type)
     # Interactive questions and answers
+
+    # test_sample_query_offical(qa)
+
     while True:
         query = input("\nEnter a query: ")
         if query == "exit":
@@ -285,4 +375,3 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(filename)s:%(lineno)s - %(message)s", level=logging.INFO
     )
     main()
-

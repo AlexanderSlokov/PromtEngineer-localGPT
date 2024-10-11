@@ -19,10 +19,9 @@ from constants import (
 
 
 def file_log(logentry):
-    file1 = open("file_ingest.log", "a")
-    file1.write(logentry + "\n")
-    file1.close()
-    print(logentry + "\n")
+    with open("file_ingest.log", "a") as file1:
+        file1.write(logentry + "\n")
+    logging.info(logentry)
 
 
 def load_single_document(file_path: str) -> Document:
@@ -41,68 +40,55 @@ def load_single_document(file_path: str) -> Document:
         return document
     except Exception as ex:
         logging.error(f"{file_path} loading error: {ex}")
-        return None
 
 
 def load_document_batch(filepaths):
     logging.info("Loading document batch")
-    # create a thread pool
     with ThreadPoolExecutor(max_workers=min(len(filepaths), INGEST_THREADS)) as executor:
-        # load files
         futures = [executor.submit(load_single_document, filepath) for filepath in filepaths]
-        # collect data
         if not futures:
             file_log("No files to submit")
             return None
         else:
             data_list = [future.result() for future in futures if future.result() is not None]
-            # return data and file paths
             return data_list, filepaths
 
 
 def load_documents(source_dir: str) -> list[Document]:
-    # Loads all documents from the source documents directory, including nested folders
     paths = []
     for root, _, files in os.walk(source_dir):
         for file_name in files:
-            print("Importing: " + file_name)
+            logging.info(f"Importing: {file_name}")
             file_extension = os.path.splitext(file_name)[1]
             source_file_path = os.path.join(root, file_name)
             if file_extension in DOCUMENT_MAP.keys():
                 paths.append(source_file_path)
 
-    # Have at least one worker and at most INGEST_THREADS workers
     n_workers = min(INGEST_THREADS, max(len(paths), 1))
     chunksize = round(len(paths) / n_workers)
     docs = []
     with ProcessPoolExecutor(n_workers) as executor:
         futures = []
-        # split the load operations into chunks
         for i in range(0, len(paths), chunksize):
-            # select a chunk of filenames
             filepaths = paths[i: (i + chunksize)]
-            # submit the task
             try:
                 future = executor.submit(load_document_batch, filepaths)
             except Exception as ex:
-                file_log("executor task failed: %s" % (ex))
+                file_log(f"executor task failed: {ex}")
                 future = None
             if future is not None:
                 futures.append(future)
-        # process all results
         for future in as_completed(futures):
-            # open the file and load the data
             try:
                 contents, _ = future.result()
                 docs.extend(contents)
             except Exception as ex:
-                file_log("Exception: %s" % (ex))
+                file_log(f"Exception: {ex}")
 
     return docs
 
 
 def split_documents(documents: list[Document]) -> tuple[list[Document], list[Document]]:
-    # Splits documents for correct Text Splitter
     text_docs, python_docs = [], []
     for doc in documents:
         if doc is not None:
@@ -171,6 +157,7 @@ def main(device_type):
     logging.info(f"Loaded {len(documents)} documents from {SOURCE_DIRECTORY}")
     logging.info(f"Split into {len(texts)} chunks of text")
 
+    logging.info(f"Embedding model being used: {EMBEDDING_MODEL_NAME}")
     embeddings = get_embeddings(device_type)
     if not embeddings:
         logging.error("Failed to load embeddings. Check the embedding model and device type.")
@@ -189,6 +176,8 @@ def main(device_type):
     except Exception as e:
         logging.error(f"Failed to create Chroma database: {e}")
         return  # Exit if creating the database fails
+
+    logging.info("Chroma database created successfully with the specified embeddings and documents.")
 
 
 if __name__ == "__main__":

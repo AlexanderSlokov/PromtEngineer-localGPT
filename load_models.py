@@ -41,7 +41,6 @@ def load_quantized_model_gguf_ggml(model_id, model_basename, device_type, loggin
         return None
 
 
-
 def load_quantized_model_qptq(model_id, model_basename, device_type, logging):
     """
     Load a GPTQ quantized model using AutoGPTQForCausalLM.
@@ -68,7 +67,7 @@ def load_quantized_model_qptq(model_id, model_basename, device_type, logging):
     """
 
     if sys.platform == "darwin":
-        logging.INFO("GPTQ models will NOT work on Mac devices. Please choose a different model.")
+        logging.info("GPTQ models will NOT work on Mac devices. Please choose a different model.")
         return None, None
 
     # The code supports all huggingface models that ends with GPTQ and have some variation
@@ -104,10 +103,10 @@ def load_full_model(model_id, model_basename, device_type, logging):
         tokenizer = AutoTokenizer.from_pretrained(model_id, cache_dir="./models/")
         logging.info("Tokenizer loaded")
         bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.float16
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16
         )
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
@@ -121,7 +120,6 @@ def load_full_model(model_id, model_basename, device_type, logging):
 
     model.tie_weights()
     return model, tokenizer
-
 
 
 def load_quantized_model_awq(model_id, logging):
